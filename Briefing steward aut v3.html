@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Briefing équipe d'évacuation — Sommet européen</title>
+<style>
+  :root{
+    --bg:#0f1330; --panel:#181c3f; --accent:#6d4aff; --accent2:#8f7bff;
+    --text:#eef0ff; --muted:#aab0d8; --warn:#ffb84d; --safe:#3ddc97; --danger:#ff6b6b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+
+  #intro{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%,#1c2150,#0a0c20);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;text-align:center;padding:2rem}
+  #intro h1{font-size:clamp(1.4rem,4vw,2.5rem);margin-bottom:.4rem;color:var(--accent2)}
+  #intro p{color:var(--muted);max-width:42rem;margin-bottom:2rem;line-height:1.6}
+  #langRow{display:flex;gap:1.4rem;flex-wrap:wrap;justify-content:center}
+  .langBtn{background:var(--accent);border:none;color:#fff;font-size:1.2rem;padding:1.1rem 2.6rem;
+    border-radius:14px;cursor:pointer;transition:.2s;line-height:1.4}
+  .langBtn:hover{background:var(--accent2);transform:scale(1.05)}
+  .langBtn small{display:block;font-size:.85rem;color:#d8d3ff;font-weight:400}
+  .small-note{font-size:.8rem;color:var(--muted);margin-top:1.6rem}
+
+  #deck{height:100%;display:flex;flex-direction:column}
+  header{display:flex;align-items:center;gap:.8rem;padding:.5rem 1rem;background:var(--panel);flex-wrap:wrap}
+  header .brand{font-weight:700;color:var(--accent2);white-space:nowrap;font-size:.9rem}
+  header .brand small{display:block;color:var(--muted);font-weight:400;font-size:.68rem}
+  #slideTitleBar{flex:1;font-size:.88rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .controls{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
+  button.icon{background:#232850;border:1px solid #333a70;color:var(--text);border-radius:8px;
+    padding:.4rem .7rem;cursor:pointer;font-size:.85rem;transition:.15s}
+  button.icon:hover{background:var(--accent);border-color:var(--accent)}
+  select{background:#232850;border:1px solid #333a70;color:var(--text);border-radius:8px;
+    padding:.4rem;font-size:.85rem;max-width:210px}
+  #langBadge{background:var(--accent);border:none;color:#fff;border-radius:8px;
+    padding:.4rem .7rem;font-weight:600;cursor:pointer}
+
+  #toc{position:fixed;top:52px;left:-320px;width:300px;bottom:0;background:var(--panel);z-index:50;
+    overflow-y:auto;transition:left .25s;border-right:2px solid var(--accent);padding:.8rem 0}
+  #toc.open{left:0}
+  #toc button.item{display:block;width:100%;text-align:left;background:none;border:none;color:var(--muted);
+    padding:.5rem 1rem;font-size:.83rem;cursor:pointer;border-left:3px solid transparent}
+  #toc button.item:hover{background:#232850;color:#fff}
+  #toc button.item.current{background:#232850;color:var(--accent2);border-left-color:var(--accent)}
+  #searchBox{width:calc(100% - 1.6rem);margin:.2rem .8rem .6rem;background:#232850;border:1px solid #333a70;
+    color:var(--text);border-radius:8px;padding:.45rem;font-size:.83rem}
+
+  #stage{flex:1;display:flex;align-items:center;justify-content:center;padding:1rem;overflow:hidden}
+  .slide{display:none;width:100%;height:100%;align-items:center;justify-content:center}
+  .slide.active{display:flex}
+  .frame{position:relative;border-radius:14px;overflow:hidden;
+    box-shadow:0 18px 60px rgba(0,0,0,.6);cursor:zoom-in;background:#000}
+  .slide img.main{display:block;max-width:min(1250px,94vw);max-height:74vh;object-fit:contain}
+  .caption{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(transparent,rgba(5,7,20,.94) 55%);
+    padding:2.2rem 1.4rem .9rem;color:#e8eaff;font-size:clamp(.8rem,1.5vw,1rem);line-height:1.5;
+    opacity:0;transition:opacity .3s;pointer-events:none}
+  .slide.showCap .caption{opacity:1}
+
+  footer{background:var(--panel);padding:.45rem 1rem;display:flex;align-items:center;gap:1rem}
+  #progressWrap{flex:1;height:8px;background:#232850;border-radius:99px;overflow:hidden;cursor:pointer}
+  #progressFill{height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .2s linear}
+  #counter{font-size:.85rem;color:var(--muted);white-space:nowrap}
+  #nowSpeaking{font-size:.78rem;color:var(--muted);white-space:nowrap;max-width:280px;overflow:hidden;text-overflow:ellipsis}
+</style>
+</head>
+<body>
+
+<div id="intro">
+  <h1>🚨 Briefing stewards d'évacuation - Evacuatie stewards <br> Sommet européen - Europese Top</h1>
+  <p><br>
+     Choisissez la langue de la narration - Kies de taal</p>
+  <div id="langRow">
+    <button class="langBtn" data-lang="fr">▶ Français <small>Français — voix FR</small></button>
+    <button class="langBtn" data-lang="nl">▶ Nederlands <small>Vlaams — stem NL</small></button>
+  </div>
+  <div class="small-note">La voix se choisit ensuite dans la barre d'outils (liste filtrée sur la langue choisie) - De gesproken taal kan op elk moment gewijzigd worden via de selectie rechts bovenaan<br>
+    Espace / flèche → = suivant · P = pause · clic sur une diapo = zoom plein écran - Spatie / pijl → = volgende slide · P = pauze · klik op een slide = zoom naar volledig scherm</div>
+</div>
+
+<div id="deck">
+  <header>
+    <button class="icon" id="tocBtn">☰</button>
+    <div class="brand">EU TOP / SOMMET EUROPÉEN<small>Safety Unit — DG ORG</small></div>
+    <button class="icon" id="langBadge" title="Langue / taal FR ⇄ NL">FR</button>
+    <div id="slideTitleBar">—</div>
+    <div class="controls">
+      <button class="icon" id="playBtn">▶</button>
+      <button class="icon" id="prevBtn">◀</button>
+      <button class="icon" id="nextBtn">▶</button>
+      <select id="speedSel" title="Speed">
+        <option value="0.85">🐢 Lent/traag</option>
+        <option value="1" selected>Norma(a)l</option>
+        <option value="1.2">🐇 Rapide/snel</option>
+      </select>
+      <select id="voiceSel" title="Choix de la voix / Taalkeuze"></select>
+    </div>
+  </header>
+
+  <nav id="toc">
+    <input type="text" id="searchBox" placeholder="🔍 Rechercher...">
+    <div id="tocList"></div>
+  </nav>
+
+  <main id="stage"></main>
+
+  <footer>
+    <span id="counter">1 / 57</span>
+    <div id="progressWrap"><div id="progressFill"></div></div>
+    <span id="nowSpeaking"></span>
+  </footer>
+</div>
+
+<script>
+/* =========================================================
+   DONNÉES — 57 diapositives : titres + narrations FR / NL.
+   Visuels = diapositives ORIGINALES : img/slide01.(jpg|png|jpeg) … img/slide57.(…)
+   ========================================================= */
+const N = 57;
+
+/* TITLES ARRAY CORRECTE — 57 entrées avec COMMAS entre chaque objet */
+const TITLES = [
+ {fr:"Bienvenue",                           nl:"Welkom"},
+ {fr:"Remerciements",                       nl:"Bedankt"},
+ {fr:"Programme du briefing",               nl:"Schema van de briefing"},
+ {fr:"Localisation du site",                nl:"Ligging van de site"},
+ {fr:"Justus Lipsius - vue d'ensemble",     nl:"Justus Lipsius - overzicht"},
+ {fr:"Plan Justus Lipsius",                 nl:"Plan Justus Lipsius"},
+ {fr:"Bâtiment Europa",                     nl:"Europagebouw"},
+ {fr:"Plan Europa Building",                nl:"Plan Europagebouw"},
+ {fr:"Liaison JL-EB",                       nl:"JL-EB verbinding"},
+ {fr:"Vos tâches concrètes",                nl:"Jullie concrete taken"},
+ {fr:"Tâches normales (1)",                 nl:"Normale taken (1)"},
+ {fr:"Tâches normales (2)",                 nl:"Normale taken (2)"},
+ {fr:"Tâches en cas de crise",              nl:"Taken bij crisis"},
+ {fr:"Rôle de l'EDI",                       nl:"Rol van de EDI"},
+ {fr:"Portes sous alarme",                  nl:"Deuren onder alarm"},
+ {fr:"Ouverture des portes sécurisées",     nl:"Beveiligde deuren openen"},
+ {fr:"Clés - utilisation",                  nl:"Sleutels - gebruik"},
+ {fr:"Perte de clé - incident",             nl:"Verlies sleutel - incident"},
+ {fr:"Priorité d'évacuation",               nl:"Evacuatie prioriteit"},
+ {fr:"Exemples d'obstructions",             nl:"Voorbeelden obstructies"},
+ {fr:"Signaler - principe",                 nl:"Melden - principe"},
+ {fr:"Situations d'urgence",                nl:"Noodsituaties"},
+ {fr:"Catégories d'urgence",                nl:"Noodcategorieën"},
+ {fr:"Donner l'alarme",                     nl:"Alarm geven"},
+ {fr:"Parkings - Stentofons",               nl:"Parkings - Stentofons"},
+ {fr:"Ascenseurs - intercoms",              nl:"Liften - intercoms"},
+ {fr:"Automatismes incendie",               nl:"Brandautomatismen"},
+ {fr:"Procédure d'évacuation",              nl:"Evacuatie procedure"},
+ {fr:"Causes d'évacuation",                 nl:"Oorzaken evacuatie"},
+ {fr:"Alarme sirènes",                      nl:"Sirenes alarm"},
+ {fr:"Annonces haut-parleurs",              nl:"Luidspreker berichten"},
+ {fr:"Signalisation vertes",                nl:"Groene signalisatie"},
+ {fr:"Portes vertes JL",                    nl:"Groene deuren JL"},
+ {fr:"Portes vertes EB",                    nl:"Groene deuren EB"},
+ {fr:"Portes rouges - attention",           nl:"Rode deuren - oppassen"},
+ {fr:"Portes rouges EB",                    nl:"Rode deuren EB"},
+ {fr:"Niveau d'évacuation",                 nl:"Evacuatieniveau"},
+ {fr:"Pictogrammes escaliers",              nl:"Trappen pictogrammen"},
+ {fr:"Repérer issues de secours",           nl:"Nooduitgangen repëren"},
+ {fr:"Points de rassemblement",             nl:"Verzamelplaatsen"},
+ {fr:"Rapport responsable",                 nl:"Verslag verantwoordelijke"},
+ {fr:"Plans évacuation JL",                 nl:"Evacuatie plannen JL"},
+ {fr:"Plans évacuation EB",                 nl:"Evacuatie plannen EB"},
+ {fr:"Stewards formés",                     nl:"Opgeleide stewards"},
+ {fr:"Couloirs - aspect modifié",           nl:"Gangen - gewijzigd uitzicht"},
+ {fr:"Définition mise à l'abri",            nl:"Definitie inschuiling"},
+ {fr:"Signal mise à l'abri",                nl:"Inschuiling signaal"},
+ {fr:"Mise à l'abri EB",                    nl:"Inschuiling EB"},
+ {fr:"Mise à l'abri JL LEX",                nl:"Inschuiling JL LEX"},
+ {fr:"Lieux sûrs totaux",                   nl:"Totale veilige plaatsen"},
+ {fr:"Problèmes évacuation",                nl:"Problemen evacuatie"},
+ {fr:"Points divers fin",                   nl:"Diverse punten einde"},
+ {fr:"Directives générales",                nl:"Algemene richtlijnen"},
+ {fr:"Explication zone",                    nl:"Uitleg zone"},
+ {fr:"Restitution matériel",                nl:"Materiaal teruggeven"},
+ {fr:"Remerciements fin",                   nl:"Einde bedankt"},
+ {fr:"Contact information",                 nl:"Contact informatie"},
+ {fr:"Fin",                                 nl:"Einde"}
+];
+
+const NAV = {
+ fr:[
+"Bienvenue dans ce briefing destiné à l'équipe d'évacuation, au cours duquel nous vous fournirons de plus amples informations concernant le sommet européen et nos attentes à votre égard.",
+"Ce briefing est donc dispensé dans le cadre de ce sommet européen. Votre présence en tant qu'assistant d'évacuation est essentielle pour la sécurité de l'événement. D'ores et déjà merci pour votre engagement !",
+"Nous allons donc examiner en détail votre futur rôle. Voici le programme de notre briefing : nous verrons vos tâches, les situations d'urgence, les évacuations et enfin quelques informations utiles. Mais nous examinons d'abord les bâtiments.",
+"Nous commençons par la localisation du site, le tout situé autour de la place Schuman. Vous voyez ici le bâtiment Europa (EB) et les deux parties du bâtiment Justus Lipsius : CO et SG. Par ailleurs, il y a aussi le bâtiment Lex. Ces deux derniers - SG et Lex - ne font toutefois pas partie du périmètre de sécurité dans lequel se déroule le sommet européen.",
+"Le bâtiment Justus Lipsius se compose de trois parties : la zone de conférence (CO), la partie secrétariat (SG) et le parking (PA).",
+"Voici le plan du bâtiment Justus Lipsius, avec les blocs A, B, C et D, la partie parking et l'atrium central. Familiarisez-vous avec ces références, elles vous seront utiles lors des rondes.",
+"Passons maintenant au bâtiment Europa, le fameux bâtiment cubique où siège le Conseil européen.",
+"Le bâtiment Europa est également réparti en blocs A, B, C et D, autour du Forum central, bien que orienté quelque peu différemment que dans le bâtiment Justus Lipsius.",
+"Les deux bâtiments sont reliés entre eux. Cette liaison JL-EB est importante : elle fait partie des passages normaux, mais ne peut pas être utilisée comme voie d'évacuation.",
+"Venons-en maintenant aux faits : vos tâches concrètes.",
+"Dans des circonstances normales, vous avez quatre missions pendant vos rondes d'inspection. Un : rappelez aux personnes présentes l'interdiction générale de fumer et indiquez-leur les endroits où il est permis de fumer. Deux : contrôlez les voies d'évacuation, les issues de secours, les cages d'escalier et les portes coupe-feu.",
+"Troisième mission : vérifiez l'accessibilité des premiers moyens d'intervention — dévidoirs à raccord tournant et bouches d'incendie, extincteurs portatifs et boutons poussoirs d'alarme incendie. Quatrième mission : signalez les situations inhabituelles, les risques et les incidents au coordinateur de votre zone, de préférence via la radio dans le groupe Prévention.",
+"En cas de crise, votre rôle change : vous facilitez l'évacuation. Vous indiquez les issues de secours, vous aidez les personnes à mobilité réduite — en leur faisant composer le numéro d'urgence 2000 —, vous contrôlez de manière chronologique si votre zone est entièrement évacuée, et vous accompagnez les personnes évacuées vers les points de rassemblement.",
+"L'EDI, un membre de la deuxième équipe d'intervention, encadre les stewards. Au début de service, il organise l'évacuation ou l'invacuation : rappel des procédures, désignation des points de rencontre, répartition des zones et identification des escaliers de secours. Il planifie également les rondes : qui, où, à quelle fréquence, et contrôle les itinéraires d'évacuation et le matériel. Il résout les problèmes de première ligne et fait office de coordinateur local.",
+"Certaines portes sont sous alarme. Leur utilisation relève d'un mode opératoire spécifique : ces portes se trouvent sur la voie d'évacuation mais sont verrouillées en circonstances normales pour des raisons de sécurité. Vous les reconnaissez à la bande rouge sur la béquille.",
+"Pour les portes sécurisées, la règle est simple : en cas d'urgence, enfoncez ce bouton-poussoir vert pour libérer la porte. Le mécanisme est conçu pour fonctionner en permanence.",
+"Vous pouvez ouvrir ces portes à l'aide de la clé qui vous est prêtée en usage. Attention aux clés : pour le JL-CO, c'est la clé BL 35 A RS3 ; pour l'EB, la TIT 8 RS3. Si vous devez changer d'étage, faites-le ensemble et utilisez pour cela la clé des escaliers de secours.",
+"Important : la perte d'une clé ou d'un autre matériel constitue un incident de sécurité grave. Il fera l'objet d'une enquête par les services compétents, avec les suites qui s'imposent.",
+"Tenez compte des personnes présentes dans votre zone, certainement pendant un sommet : par ordre de priorité, les VVIP, les délégations et les personnalités, les journalistes, les fonctionnaires, les contractuels, etc. Discrétion et professionnalisme sont par conséquent essentiels.",
+"Voici quelques exemples concrets de situations à repérer : des issues de secours bloquées. Ce type d'obstruction doit être signalé immédiatement.",
+"Autres exemples de situations à signaler à votre coordinateur : rappelez-vous le principe — en cas de doute, signalez-le.",
+"Nous abordons maintenant les situations d'urgence.",
+"Trois catégories principales : danger général, incendie et premiers soins en cas d'accident. Dans tous les cas, l'instruction est la même : utilisez votre radio et-ou appelez le numéro d'urgence 2000.",
+"Pour donner l'alarme : enfoncez le bouton d'alarme, puis appelez le 2000, ou le 02 281 2000 avec un GSM.",
+"Dans les parkings, vous ne disposez pas du même système : utilisez-y les Stentofons, ces intercoms vous relient directement au centre de sécurité.",
+"Dans les ascenseurs, la communication s'effectue via les intercoms intégrés. Veillez toutefois à utiliser le bon bouton-poussoir.",
+"Sachez qu'en cas d'incendie, plusieurs automatismes sont activés : les portes coupe-feu se ferment, les ascenseurs ne s'arrêtent plus à l'étage de la détection, la ventilation de confort s'arrête, les cages d'escalier sont placées en surpression et dans le Justus Lipsius, les couloirs sont désenfumés.",
+"Nous examinons maintenant la procédure d'évacuation elle-même.",
+"Une évacuation peut avoir différentes causes : une alerte à la bombe, un incendie ou d'autres événements graves.",
+"L'alarme d'évacuation est donnée par des sirènes : un ton alterné pendant environ une minute. La réaction doit être immédiate : évacuez le bâtiment.",
+"Après les sirènes, un message est également diffusé le cas échéant via les haut-parleurs : un signal « ding-dong » répété, suivi d'annonces en français et en anglais. Suivez scrupuleusement les instructions qui y sont données.",
+"Suivez toujours la signalisation d'évacuation et utilisez les portes de secours vertes.",
+"Dans le Justus Lipsius, vous reconnaissez ainsi les portes des escaliers de secours : une porte verte signifie que vous êtes sur le bon chemin. Poursuivez.",
+"Voici les portes vertes dans le bâtiment EB.",
+"Attention aux portes rouges : ne passez pas par ici, car vous quittez alors la voie d'évacuation. Cela vaut tant dans le JL que dans l'EB.",
+"Et voici les portes rouges dans le bâtiment EB.",
+"En cas d'évacuation : descendez — ou montez — jusqu'au niveau d'évacuation.",
+"Dans les cages d'escalier, vous suivez les pictogrammes : ils indiquent sur le palier la direction que vous devez suivre.",
+"Dès votre arrivée dans votre zone, repérez déjà où se trouvent les issues de secours et le niveau d'évacuation.",
+"Vous voyez ici l'emplacement des points de rassemblement autour du site. Selon votre bâtiment, les points de rassemblement diffèrent : pour JL-CO et JL-SG, c'est la dispersion ; pour Lex, l'atrium du Justus Lipsius ; pour le bâtiment Europa, également la dispersion.",
+"Une fois sur place, vous faites rapport au responsable au point de rassemblement, ou vous appelez le 9200.",
+"Voici les plans d'évacuation tels que vous les trouvez dans les couloirs des différentes zones. Étudiez-les en profondeur : vous devez connaître les itinéraires de votre zone sans aucune hésitation.",
+"Et voici un plan similaire pour le bâtiment EB.",
+"Bon à savoir : des stewards d'évacuation formés, reconnaissables à leur gilet fluorescent, vous aideront dans votre zone pour votre tâche.",
+"En mode évacuation, les couloirs ont parfois un aspect complètement différent.",
+"Qu'appelons-nous mise à l'abri ? Il s'agit de quitter un environnement à risque aussi rapidement et en toute sécurité que possible, pour se rendre dans un lieu plus sûr dans le même bâtiment.",
+"Le signal de mise à l'abri est différent : pas de sirène, ou seulement un ton très court, suivi d'un message via les haut-parleurs — un signal répété et des annonces en français et en anglais. Suivez toujours scrupuleusement toutes les instructions.",
+"Dans l'EB, vous vous mettez à l'abri via le chemin indiqué par cette signalisation spécifique.",
+"Dans le JL et le Lex, le même principe s'applique. Suivez les pictogrammes de mise à l'abri pour trouver votre chemin et ignorez la couleur des portes.",
+"En cas de mise à l'abri totale, les lieux sûrs sont : pour JL-Conférence et JL-Secrétariat, le niveau 04 du parking JL ; pour Lex, les niveaux -2 et -3 du parking Lex ; pour Europa, les parkings EB.",
+"Lors de problème pendant l'évacuation ou la mise en abri : appelez le 2000, soit 02 281 2000, ou utilise ta radio.",
+"Pour terminer : points divers et fin de service.",
+"Quelques directives générales : une attitude professionnelle ; suivez toujours les instructions du Safety Officer ou du coordinateur de zone ; respectez les règles en matière de tabac ; la fin du service a lieu sur appel par zone, encadré par le Safety Officer ; et restituez tout le matériel.",
+"Une explication détaillée de votre tâche dans votre zone est donnée par votre coordinateur de zone, l'EDI et-ou le Safety Officer. Le coordinateur de zone organisera également les périodes de repos.",
+"Dernier point crucial à la fin du service : restituez tout le matériel et transférez-le. Le personnel qui n'a pas restitué l'ensemble de l'équipement ne peut pas quitter le bâtiment et doit se mettre à disposition du service de prévention et de sécurité.",
+"Voilà, c'était tout. D'ores et déjà merci pour votre collaboration ! Bon courage à tous !",
+"Pour toute question, vous pouvez vous adresser à Didier Bosman sur didier.bosman@consilium.europa.eu ou par téléphone au +32 475 69 42 31."
+ ],
+ nl:[
+"Welkom bij deze briefing voor de evacuatie-ploeg, waarin we jullie wat meer informatie zullen bezorgen aangaande de Europese Top en wat wij van jullie hiervoor verwachten.",
+"Deze briefing wordt dus gegeven in het kader van deze Europese Top. Jullie aanwezigheid als evacuatie-assistent is essentieel voor de veiligheid van het evenement. Alvast bedankt voor jullie inzet !",
+"Laten we samen jullie toekomstige rol in detail bekijken. Dit is het schema van onze briefing: we bekijken jullie taken, noodsituaties, evacuaties en tot slot wat nuttige informatie. Maar eerst bekijken we de gebouwen.",
+"We beginnen met de ligging van de site, alles gelegen rond het Shumanplein. U ziet hier het Europa-gebouw (E.B.) en de twee delen van het Justus Lipsius gebouw : C.O. en S.G. Verder is er ook het LEX-gebouw. Beide laatsten, SG en LEX, maken echter geen deel uit van de veiligheidsperimeter waarbinnen de Europese top zich afspeelt.",
+"Het Justus Lipsius-gebouw bestaat uit drie delen: de Conferentiezone (C.O.), het Secretariaatsgedeelte (S.G.) en de parking (P-A).",
+"Dit is het plan van het Justus Lipsius gebouw, met de blokken A, B, C en D, het parkingsgedeelte en het centrale Atrium. Maak je vertrouwd met deze referenties, ze zullen nuttig zijn tijdens de rondes.",
+"Nu het Europa-gebouw : het bekende kubusvormige gebouw waar de Europese Raad zetelt.",
+"Het Europa-gebouw is eveneens ingedeeld in blokken A, B, C en D, rond het centrale Forum, zij het enigzins anders georienteerd dan in het Justus Lipsius gebouw.",
+"De twee gebouwen zijn met elkaar verbonden. Deze J.L.–E.B.-verbinding is belangrijk: ze maakt deel uit van de normale passages, maar mag niet gebruikt worden als evacuatie-weg.",
+"Nu komen we ter zake: jullie concrete taken.",
+"In normale omstandigheden heb je vier opdrachten tijdens de continue inspectie-rondes. Eén: herinner de aanwezigen aan het algemene rookverbod en wijs hen de plaatsen aan waar roken wél is toegelaten. Twee: controleer de evacuatie-wegen, de nooduitgangen, de trappenhuizen en de brandwerende deuren.",
+"Derde opdracht: ga de bereikbaarheid na van de eerste interventie-middelen : brandhaspels en hydranten, draagbare blustoestellen en de drukknoppen voor het brandalarm. Vierde opdracht: meld ongebruikelijke situaties, risico's en incidenten aan de coördinator van uw zone, bij voorkeur via radio in de groep Preventie.",
+"In geval van crisis verandert uw rol: u faciliteert de evacuatie. U wijst de nooduitgangen aan, u helpt personen met beperkte mobiliteit — door hen het noodnummer 2000 te laten bellen —, u controleert chronologisch of uw zone volledig ontruimd is, en u begeleidt de geëvacueerden naar de verzamelplaatsen.",
+"De E.D.I., het lid van de tweede interventieploeg, omkadert de stewards. Bij aanvang van de dienst organiseert hij de evacuatie of inschuiling : herhaling van procedures, aanwijzing van ontmoetingspunten, verdeling van de zones en identificatie van de noodtrappen. Hij plant ook de rondes : wie, waar, hoe vaak, en controleert de evacuatie-routes en het materiaal. Hij lost als eerste lijn problemen op en fungeert als lokale coördinator.",
+"Sommige deuren staan onder alarm. Hun gebruik valt onder een specifieke werkwijze : deze deuren bevinden zich op de evacuatie-weg maar zijn om veiligheidsredenen in normale omstandigheden op slot. Je kan ze herkennen door de rode band op de klink.",
+"Voor beveiligde deuren is de regel eenvoudig: druk deze groene drukknop in geval van nood in om de deur vrij te geven. Het mechanisme is ontworpen om altijd te blijven werken.",
+"Deze deuren kan je openen met de sleutel die jullie in bruikleen krijgen. Let op met de sleutels: voor de J.L.-C.O. is het de sleutel BL35ARS3; voor de E.B. de TIT8RS3. Als u van verdieping moet wisselen, doe dit gezamenlijk en gebruik daarvoor de sleutel voor de noodtrappen.",
+"Belangrijk : het verliezen van een sleutel of ander materieel is een ernstig veiligheidsincident. Het zal worden onderzocht door de bevoegde diensten, met de nodige gevolgen.",
+"Houd rekening wie zich in uw zone bevindt, zeker tijdens een top: in volgorde van prioriteit de VVIP's, delegaties en prominenten, journalisten, ambtenaren, contractanten, enz. Discretie en professionalisme zijn bijgevolg essentieel.",
+"Hier een paar concrete voorbeelden van een situatie om op te sporen: geblokkeerde nooduitgangen. Dit soort obstructie moet onmiddellijk worden gemeld.",
+"Andere voorbeelden van situaties om te melden aan uw coördinator: onthoud het principe : bij twijfel, meld het.",
+"Nu bespreken we de noodsituaties.",
+"Drie hoofdcategorieën: algemeen gevaar, brand en eerste hulp bij ongevallen. In alle gevallen is de instructie dezelfde: gebruik uw radio en-of bel het noodnummer 2000.",
+"Om alarm te geven: druk de alarmknop in, en bel daarna 2000, of 02 281 2000 met een GSM.",
+"In de parkings beschikt u niet over hetzelfde systeem: gebruik daar de Stentofons, deze intercoms verbinden u rechtstreeks met het veiligheidscentrum.",
+"In de liften gebeurt de communicatie via de ingebouwde intercoms. Gebruik wel de juiste drukknop.",
+"Weet dat bij brand verschillende automatismen geactiveerd worden: de branddeuren sluiten, de liften stoppen niet meer op het verdiep van de detectie, de comfortventilatie stopt, de trappen worden in overdruk geplaatst en in het Justus Lipsius worden de gangen ontrookt.",
+"Nu bekijken we de evacuatieprocedure zelf.",
+"Een evacuatie kan verschillende oorzaken hebben: een bommelding, een brand, of een andere ernstige gebeurtenis.",
+"Het evacuatie-alarm wordt gegeven door sirenes: een afwisselende toon gedurende ongeveer één minuut. De reactie moet onmiddellijk zijn: ontruim het gebouw.",
+"Na de sirenes wordt mogelijks ook een mededeling via de luidsprekers uitgezonden: een herhaald «ding-dong»-signaal, gevolgd door aankondigingen in het Frans en het Engels. Volg nauwgezet de instructies die daarin gegeven worden.",
+"Volg altijd de evacuatie signalisatie en gebruik de groene nooddeuren.",
+"In het Justus Lipsius herkent u de deuren van de noodtrappen zo: een groene deur betekent dat u op de juiste weg bent. Ga verder.",
+"Dit zijn de groene deuren in het E.B.-gebouw.",
+"Let op de rode deuren: ga niet langs hier, want dan verlaat u de evacuatie-weg. Dit geldt zowel in J.L. als in E.B.",
+"En dit zijn de rode deuren in het E.B.-gebouw.",
+"Bij evacuatie: ga naar beneden, of naar boven, tot op het evacuatie-niveau.",
+"In de trappen volgt u de pictogrammen: ze tonen op het bordes de richting die u moet volgen.",
+"Zoek bij aankomst in uw zone al uit waar de nood-uitgangen en het evacuatie-niveau zich bevinden.",
+"Hier ziet u de locatie van de verzamelplaatsen rond de site. Naargelang uw gebouw verschillen de verzamelplaatsen. Voor J.L.-C.O. en J.L.-S.G. geldt dispersie; voor LEX het atrium van het Justus Lipsius; voor het Europa-gebouw eveneens dispersie.",
+"Eenmaal ter plaatse brengt u verslag uit bij de verantwoordelijke op de verzamelplaats, of u belt 9200.",
+"Dit zijn de evacuatie-plannen zoals u ze in de gangen van de verschillende zones vindt. Bestudeer ze grondig: u moet de routes van uw zone kennen zonder enige aarzeling.",
+"En dit is een gelijkaardig plan voor het E.B.-gebouw.",
+"Nuttig om weten: opgeleide evacuatie-stewards, herkenbaar aan hun fluorescerend vestje, zullen u helpen in uw zone bij uw taak.",
+"In evacuatie-modus zien de gangen er soms compleet anders uit.",
+"Wat noemen we inschuilen ? Het is een risicovolle omgeving zo snel en veilig mogelijk verlaten, om zich naar een veiliger plaats te begeven in hetzelfde gebouw.",
+"Het inschuil-signaal is anders: geen sirene, of slechts één heel korte toon, gevolgd door een mededeling via de luidsprekers : een herhaaldelijk signaal en aankondigingen in het Frans en Engels. Volg altijd nauwgezet alle instructies.",
+"In E.B. schuilt u in via de weg aangeduid door deze specifieke signalisatie.",
+"In J.L. en LEX geldt hetzelfde principe. Volg de inschuil-pictogrammen om de weg te vinden en negeer de kleur van de deuren.",
+"In geval van totale inschuiling zijn de veilige plaatsen: voor J.L.-Conferentie en J.L.-Secretariaat, niveau nul 4 van de J.L.-parking; voor Lex de niveaus min 2 en min 3 van de Lex-parking; voor Europa de E.B.-parkings.",
+"Bij problemen tijdens evacuatie of inschuiling: bel 2000, of 02 281 2000, of gebruik je radio.",
+"Tot slot: diverse punten en het einde van de dienst.",
+"Enkele algemene richtlijnen: een professionele houding; volg steeds de instructies van de Safety Officer of zonecoördinator; respecteer de rook-regels; het einde van de dienst gebeurt op afroep per zone, begeleid door de Safety Officer; en geef al het materiaal terug.",
+"Een gedetailleerde uitleg van uw taak in uw zone wordt gegeven door uw zonecoördinator, de E.D.I. en-of de Safety Officer. De zonecoördinator zal ook de rustperiodes organiseren.",
+"Laatste cruciale punt bij het einde van de dienst: geef al het materieel terug en draag het over. Personeel dat niet alle apparatuur heeft teruggegeven, mag het gebouw niet verlaten en moet zich ter beschikking stellen van de preventie- en veiligheidsdienst.",
+"Ziezo, dit was het. Alvast bedankt voor jullie medewerking! Veel succes allemaal!",
+"Voor vragen kunt u terecht bij Didier Bosman op didier.bosman@consilium.europa.eu of telefonisch op +32 475 69 42 31."
+]
+};
+
+/* ================= CONSTRUCTION DES DIAPOS + SOMMAIRE ================= */
+const stage=document.getElementById('stage');
+const tocList=document.getElementById('tocList');
+
+for(let i=0;i<N;i++){
+  const d=document.createElement('section'); d.className='slide showCap'; d.id='slide'+i; d.dataset.id = i;
+  d.innerHTML=`<div class="frame">
+      <img class="main" data-idx="${i}" alt="">
+      <div class="caption" id="cap${i}"></div>
+    </div>`;
+  stage.appendChild(d);
+
+  const btn=document.createElement('button'); btn.className='item';
+  btn.textContent=(i+1)+'. '+TITLES[i].fr+' / '+TITLES[i].nl;
+  btn.onclick=()=>{goto(i);closeToc();};
+  tocList.appendChild(btn);
+}
+
+/* ================= RÉFÉRENCES UNIQUE ================= */
+const tocBtns=[...document.querySelectorAll('#toc .item')];
+const counter=document.getElementById('counter');
+const fill=document.getElementById('progressFill');
+const titleBar=document.getElementById('slideTitleBar');
+const speaking=document.getElementById('nowSpeaking');
+const playBtn=document.getElementById('playBtn');
+const speedSel=document.getElementById('speedSel');
+const voiceSel=document.getElementById('voiceSel');
+const langBadge=document.getElementById('langBadge');
+const toc=document.getElementById('toc');
+
+/* État global — déclaré UNE seule fois */
+let lang='fr', cur=0, playing=false, fallbackTimer=null, langVoices=[];
+
+/* TRANSITION GUARD — empêche les doubles transitions */
+let transiting = false;
+
+/* État plein écran */
+let fullscreenState = {
+  isOpen: false,
+  overlay: null
+};
+
+/* ================= CHARGEMENT DES DIAPOS ORIGINALES ================= */
+document.querySelectorAll('.slide img.main').forEach(img=>{
+  const n=String(parseInt(img.dataset.idx)+1).padStart(2,'0');
+  const exts=['jpg','png','jpeg']; let e=0;
+  img.onerror=()=>{ if(e<exts.length) img.src='img/slide'+n+'.'+exts[e++]; };
+  img.src='img/slide'+n+'.jpg';
+});
+
+/* ================= VOIX : filtrage strict selon la langue ================= */
+function refreshVoiceList(){
+  const vs=speechSynthesis.getVoices();
+  const re = lang==='fr' ? /^fr([-_]|$)/i : /^nl([-_]|$)/i;
+  langVoices = vs.filter(v=>re.test(v.lang));
+  voiceSel.innerHTML='';
+  if(langVoices.length){
+    langVoices.forEach((v,i)=>{
+      const o=document.createElement('option'); o.value=i;
+      o.textContent=(lang==='fr'?'🇫🇷 ':'🇧🇪 ')+v.name+' ('+v.lang+')';
+      voiceSel.appendChild(o);
+    });
+    let best=langVoices.findIndex(v=>/BE/i.test(v.lang));
+    if(best<0) best=0;
+    voiceSel.selectedIndex=best;
+    voiceSel.dataset.empty='0';
+  }else{
+    const o=document.createElement('option'); o.value='';
+    o.textContent= lang==='fr' ? '⚠ Aucune voix française installée' : '⚠ Geen Nederlandse stem geïnstalleerd';
+    voiceSel.appendChild(o); voiceSel.dataset.empty='1';
+  }
+}
+function currentVoice(){
+  if(voiceSel.dataset.empty==='1') return null;
+  return langVoices[parseInt(voiceSel.value)]||null;
+}
+if('speechSynthesis' in window){
+  speechSynthesis.onvoiceschanged=refreshVoiceList;
+  window.addEventListener('load',()=>setTimeout(refreshVoiceList,300));
+  refreshVoiceList();
+}else{
+  voiceSel.dataset.empty='1';
+}
+
+/* ================= MOTEUR DE LECTURE ================= */
+function stopSpeech(){
+  if('speechSynthesis' in window) speechSynthesis.cancel();
+  clearTimeout(fallbackTimer);
+  transiting = false;
+}
+
+function show(i){
+  cur=Math.max(0,Math.min(N-1,i));
+  document.querySelectorAll('.slide').forEach((el,k)=>el.classList.toggle('active',k===cur));
+  tocBtns.forEach((b,k)=>b.classList.toggle('current',k===cur));
+  counter.textContent=(cur+1)+' / '+N;
+  fill.style.width=(cur/(N-1)*100)+'%';
+  titleBar.textContent=(cur+1)+'. '+TITLES[cur].fr+' / '+TITLES[cur].nl;
+  speakCurrent();
+  
+  // Mettre à jour le plein écran si ouvert
+  updateFullscreenContent();
+}
+
+const NEXT_DELAY = 3000;
+
+function scheduleNext(){
+  clearTimeout(fallbackTimer);
+  
+  if(cur >= N-1){
+    playing = false;
+    updatePlayBtn();
+    transiting = false;
+    speaking.textContent = lang==='fr' ? '✅ fin' : '✅ einde';
+    return;
+  }
+  
+  transiting = true;
+  speaking.textContent = '⏳ 3 s…';
+  
+  fallbackTimer = setTimeout(()=>{
+    transiting = false;
+    if(playing) goto(cur+1);
+  }, NEXT_DELAY);
+}
+
+function estimateMs(){
+  return Math.max(6000, NAV[lang][cur].split(/\s+/).length*380);
+}
+
+function scheduleFallback(){
+  clearTimeout(fallbackTimer);
+  fallbackTimer=setTimeout(scheduleNext, estimateMs()/parseFloat(speedSel.value));
+}
+
+function speakCurrent(){
+  stopSpeech();
+  document.getElementById('cap'+cur).textContent = NAV[lang][cur];
+  if(!playing){ speaking.textContent='⏸'; return; }
+  if(!('speechSynthesis' in window) || voiceSel.dataset.empty==='1'){
+    speaking.textContent= lang==='fr' ? '⚠ pas de voix — avance minutée' : '⚠ geen stem — timing-modus';
+    scheduleFallback(); return;
+  }
+  speaking.textContent='🔊 …';
+  const u=new SpeechSynthesisUtterance(NAV[lang][cur]);
+  const v=currentVoice(); if(v) u.voice=v;
+  u.lang = v ? v.lang : (lang==='fr'?'fr-BE':'nl-BE');
+  u.rate=parseFloat(speedSel.value);
+
+  let started = false;
+  u.onstart = ()=>{ started = true; };
+
+  u.onend=()=>{
+    if(playing && !transiting){
+      clearTimeout(fallbackTimer);
+      scheduleNext();
+    }
+  };
+
+  u.onerror=()=>scheduleFallback();
+  speechSynthesis.speak(u);
+
+  fallbackTimer=setTimeout(()=>{
+    if(!speechSynthesis.speaking && !started){
+      scheduleNext();
+    }
+  }, 15000);
+}
+
+function goto(i){
+  stopSpeech();
+  show(i);
+}
+
+/* ================= CONTRÔLES ================= */
+function updatePlayBtn(){ playBtn.textContent=playing?'⏸':'▶'; }
+playBtn.onclick=()=>{
+  playing=!playing; updatePlayBtn();
+  if(playing) {
+    speakCurrent();
+  } else { 
+    stopSpeech(); 
+    speaking.textContent='⏸'; 
+  }
+};
+document.getElementById('prevBtn').onclick=()=>goto(cur-1);
+document.getElementById('nextBtn').onclick=()=>goto(cur+1);
+speedSel.onchange=()=>speakCurrent();
+voiceSel.onchange=()=>speakCurrent();
+
+langBadge.onclick=()=>{
+  lang = lang==='fr' ? 'nl' : 'fr';
+  langBadge.textContent = lang.toUpperCase();
+  document.documentElement.lang = lang==='fr' ? 'fr-BE' : 'nl-BE';
+  refreshVoiceList(); speakCurrent();
+};
+
+function closeToc(){ toc.classList.remove('open'); }
+document.getElementById('tocBtn').onclick=()=>toc.classList.toggle('open');
+document.getElementById('searchBox').oninput=e=>{
+  const q=e.target.value.toLowerCase();
+  tocBtns.forEach(b=>b.style.display=b.textContent.toLowerCase().includes(q)?'':'none');
+};
+document.getElementById('progressWrap').onclick=e=>{
+  const r=e.currentTarget.getBoundingClientRect();
+  goto(Math.round((e.clientX-r.left)/r.width*(N-1)));
+};
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' ')goto(cur+1);
+  if(e.key==='ArrowLeft')goto(cur-1);
+  if(e.key==='Escape')closeToc();
+  if(e.key==='p'||e.key==='P')playBtn.click();
+});
+
+/* ================= PLEIN ÉCRAN AUTO-MISE-À-JOUR (FIXED) ================= */
+
+// Fonction pour synchroniser le contenu plein écran avec la slide courante
+function updateFullscreenContent() {
+  if(!fullscreenState.isOpen || !fullscreenState.overlay) return;
+  
+  const captionText = NAV[lang][cur] || '';
+  const slideEl = document.getElementById('slide'+cur);
+  const imgSrc = slideEl?.querySelector('img.main')?.src || '';
+  
+  // Mise à jour de l'image
+  const imgEl = fullscreenState.overlay.querySelector('img.main');
+  if(imgEl && imgSrc) {
+    imgEl.src = imgSrc;
+  }
+  
+  // Mise à jour de la légende
+  const capEl = fullscreenState.overlay.querySelector('.fs-caption');
+  if(capEl && captionText) {
+    capEl.textContent = captionText;
+  }
+}
+
+// Ouvrir le plein écran
+document.addEventListener('click',e=>{
+  const im=e.target.closest('.slide img.main');
+  if(im && !fullscreenState.isOpen){
+    const idx = parseInt(im.dataset.idx);
+    const captionText = NAV[lang][idx] || '';
+    
+    fullscreenState.isOpen = true;
+    
+    const ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:300;cursor:zoom-out;padding:1rem';
+    
+    ov.innerHTML=`
+      <img class="main" src="${im.src}" style="max-width:96%;max-height:75%;border-radius:10px">
+      <p class="fs-caption" style="max-width:90%;color:#e8eaff;font-size:1.1rem;margin-top:1rem;text-align:center;line-height:1.6">${captionText}</p>
+      <button class="fs-close" style="position:absolute;top:20px;right:20px;background:var(--danger);border:none;color:#fff;padding:.5rem 1.5rem;border-radius:8px;cursor:pointer;font-size:1.2rem">✕</button>
+    `;
+    
+    // Navigation clavier en plein écran
+    ov.onkeydown=(ev)=>{
+      if(ev.key==='Escape') closeFullscreen();
+      if(ev.key==='ArrowRight' || ev.key===' ') {
+        goto(cur+1); // Avance et met à jour automatiquement
+        ev.preventDefault();
+      }
+      if(ev.key==='ArrowLeft') {
+        goto(cur-1); // Recule et met à jour automatiquement
+        ev.preventDefault();
+      }
+    };
+    
+    // Clic sur l'image = avancer
+    ov.onclick=(ev)=>{ 
+      if(ev.target.classList.contains('main')) {
+        goto(cur+1);
+      }
+    };
+    
+    // Bouton fermer
+    ov.querySelector('.fs-close').onclick=(ev)=>{
+      ev.stopPropagation();
+      closeFullscreen();
+    };
+    
+    ov.setAttribute('tabindex', '-1');
+    ov.focus();
+    document.body.appendChild(ov);
+    fullscreenState.overlay = ov;
+  }
+});
+
+// Fermer le plein écran
+function closeFullscreen() {
+  if(fullscreenState.overlay) {
+    fullscreenState.overlay.remove();
+    fullscreenState.overlay = null;
+  }
+  
+  fullscreenState.isOpen = false;
+}
+
+// Override ESC key handler pour fermer le plein écran en premier
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape' && fullscreenState.isOpen) {
+    closeFullscreen();
+    return;
+  }
+});
+
+/* ================= DÉMARRAGE : choix de la langue ================= */
+document.querySelectorAll('.langBtn').forEach(b=>{
+  b.onclick=()=>{
+    lang=b.dataset.lang;
+    langBadge.textContent=lang.toUpperCase();
+    document.documentElement.lang = lang==='fr'?'fr-BE':'nl-BE';
+    document.getElementById('intro').style.display='none';
+    playing=true; updatePlayBtn();
+    if('speechSynthesis' in window){
+      refreshVoiceList();
+      let tries=0;
+      const start=()=>{
+        refreshVoiceList();
+        if(langVoices.length || ++tries>20){ show(0); }
+        else setTimeout(start,150);
+      };
+      if(!langVoices.length) setTimeout(start,400); else show(0);
+    } else show(0);
+  };
+});
+</script>
+</body>
+</html>
