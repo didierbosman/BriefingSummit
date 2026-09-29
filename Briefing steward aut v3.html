@@ -349,8 +349,8 @@ let fullscreenState = {
 document.querySelectorAll('.slide img.main').forEach(img=>{
   const n=String(parseInt(img.dataset.idx)+1).padStart(2,'0');
   const exts=['jpg','png','jpeg']; let e=0;
-  img.onerror=()=>{ if(e<exts.length) img.src='img/slide'+n+'.'+exts[e++]; };
-  img.src='img/slide'+n+'.jpg';
+  img.onerror=()=>{ if(e<exts.length) img.src='img/Slide'+n+'.'+exts[e++]; };
+  img.src='img/Slide'+n+'.JPG';
 });
 
 /* ================= VOIX : filtrage strict selon la langue ================= */
